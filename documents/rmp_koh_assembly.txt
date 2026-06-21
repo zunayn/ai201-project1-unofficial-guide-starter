@@ -1,0 +1,7 @@
+Course: CS 2318 (Assembly Language)
+Professor: Lee Koh
+Rating: 4.5/5
+
+He's definitely not as bad as his ratings say. He's very knowledgeable and his notes are incredibly detailed. He has recordings for every class too in case you miss one. His assembly class is a well refined deep dive into assembly and how it links to modern programming languages. 
+
+Downside is his version of Mips is old so you have to follow the older syntax. He will switch up the assignments just enough so that you need to understand the material and not just borrow someone elses work. You will need to handwrite code for tests/quizzes.

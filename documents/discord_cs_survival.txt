@@ -1,0 +1,6 @@
+[txst-cs-discord] #course-advice
+User: @CJWTX
+Message: For anyone taking electives next year: I took Parallel Programming with Martin Burtscher. It was a very valuable experience- don't miss the chance. He is in a different league as far as lecturing goes. The course is not THAT difficult, but it felt nearly impossible to get solid A's on the quizzes. Difficulty 8/10.
+
+User: @KillingForCompany
+Message: I took Software Engineering with Ted Lehr. He was very rude at times, and made multiple people cry. I felt like this course was just a dumbed down repeat of OO with some git as well. The semester long group project is a decent way to make friends, at least. Difficulty 3/10.
