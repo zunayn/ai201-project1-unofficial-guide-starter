@@ -98,55 +98,60 @@ Relevance explanation: The highest-ranked chunk directly answers the question by
 
 ---
 
+
 ## Grounded Generation
 
 **System prompt grounding instruction:**
+The system enforces grounding through an ultra-strict prompt passed to `llama-3.3-70b-versatile` with the temperature set to `0.0`. The core instructions dictate:
+1. "Answer the query relying EXCLUSIVELY on the facts stated in the context text below. Do NOT use outside general knowledge."
+2. "If the context does not contain direct answers to the query, respond EXACTLY with: 'I do not have enough information on that in the current unofficial guides.'"
 
 **How source attribution is surfaced in the response:**
+Source attribution is handled in two layers. First, the LLM is instructed to append inline citations (e.g., `[reddit_cs3358]`) directly next to the facts it states. Second, the backend code (`app.py`) parses the metadata of the chunks returned by ChromaDB and programmatically populates a separate "Retrieved From" UI textbox with a bulleted list of the exact filenames used to generate the answer.
 
 ---
 
 ## Example Responses
 
 **Grounded response 1**
-
-Query:
-
-Response:
-
-Source attribution:
+Query: Who should I take for Data Structures (CS 3358)?
+Response: You should consider taking Xiaomin Li or Lee Koh for Data Structures. Xiaomin Li is fantastic and has the best slides at TXST, and tests are open book [reddit_cs3358]. Lee Koh is outstanding and will REALLY improve your programming skills, though he is one of the most difficult professors in the department [reddit_cs3358].
+Source attribution: 
+• reddit_cs3358.txt
+• reddit_prof_recommendations.txt
 
 ---
 
 **Grounded response 2**
-
-Query:
-
-Response:
-
+Query: How long is the walk from the stadium lot to RFM?
+Response: The walk from the stadium lot to Roy F. Mitte (RFM) takes approximately 25-30 minutes [reddit_parking_commute]. Students recommend bringing body wipes and clinical strength deodorant due to the heat and distance [reddit_parking_commute].
 Source attribution:
+• reddit_parking_commute.txt
 
 ---
 
 **Out-of-scope query**
-
-Query:
-
-System response (refusal):
+Query: What are the hours for the campus recreation center?
+System response (refusal): I do not have enough information on that in the current unofficial guides.
 
 ---
 
 ## Query Interface
 
-**Input fields:**
-
-**Output format:**
+**Input fields:** A primary `Gradio Textbox` for the user to type their plain-language question, and an "Ask" button.
+**Output format:** Two separate `Gradio Textboxes`. The top box displays the generated, grounded answer with inline citations. The bottom box dynamically lists the source file metadata (the specific `.txt` documents retrieved from the vector database).
 
 ---
 
 **Sample Interaction Transcript**
 
-> **User:** > **System:** ---
+> **User:** Where is the best place to study near Derrick Hall?
+
+> **System (Answer Box):** The best places to study near Derrick Hall include Math Cats and Cal Central, which are both located inside Derrick Hall [reddit_study_spots]. Additionally, the CLC on the third floor of Ingram is highly recommended and offers wonderful spaces to study right next to Mitte [reddit_study_spots].
+
+> **System (Retrieved From Box):** > • reddit_study_spots.txt
+> • reddit_derrick_vs_ingram.txt
+
 
 ## Evaluation Report
 
