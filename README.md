@@ -155,13 +155,15 @@ System response (refusal): I do not have enough information on that in the curre
 
 ## Evaluation Report
 
+The 5 test questions from `planning.md` were run through the system using the Gradio interface. Each result was judged against the ground-truth text collected in Milestone 1.
+
 | # | Question | Expected answer | System response (summarized) | Retrieval quality | Response accuracy |
 |---|----------|-----------------|------------------------------|-------------------|-------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 | Who should I take for Data Structures (CS 3358)? | Xiaomin Li or Lee Koh. Li has great slides; Koh is hard but rewarding. Avoid Hwang. | Recommended taking Xiaomin Li (open book tests, great slides) or Lee Koh (outstanding but difficult) [reddit_cs3358]. | Relevant | Accurate |
+| 2 | Is Dr. Mylene Farias a good choice for Computer Architecture (CS 3339)? | Yes, she is fairly new but takes feedback well, gives extensions, and offers extra credit. | Answered that she isn't too bad, tries her best to take feedback, and is happy to give homework extensions [reddit_cs3339]. | Relevant | Accurate |
+| 3 | Where are the best places to study near Derrick Hall? | Math Cats, Cal Central, or the CLC on the 3rd floor of Ingram. | Identified Math Cats and Cal Central in Derrick, and the CLC on the third floor of Ingram [reddit_study_spots]. | Relevant | Accurate |
+| 4 | How long does it take to walk from the stadium parking lot to Roy F. Mitte (RFM)? | It takes 25-30 minutes, and students recommend using deodorant/body wipes. | Stated that the walk takes 25-30 minutes and noted that students use body wipes and clinical strength deodorant [reddit_parking_commute]. | Relevant | Accurate |
+| 5 | Does Professor Lee Koh use a modern version of MIPS in Assembly Language? | No, his version of MIPS is old, and you have to follow older syntax. | I do not have enough information on that in the current unofficial guides. | Off-target | Inaccurate |
 
 **Retrieval quality:** Relevant / Partially relevant / Off-target  
 **Response accuracy:** Accurate / Partially accurate / Inaccurate
@@ -170,34 +172,40 @@ System response (refusal): I do not have enough information on that in the curre
 
 ## Failure Case Analysis
 
-**Question that failed:**
+**Question that failed:** 
+"Does Professor Lee Koh use a modern version of MIPS in Assembly Language?"
 
-**What the system returned:**
+**What the system returned:** 
+"I do not have enough information on that in the current unofficial guides."
 
-**Root cause (tied to a specific pipeline stage):**
+**Root cause (tied to a specific pipeline stage):** 
+This was a **Retrieval Stage** failure caused by the fixed character chunking strategy. In `rmp_koh_assembly.txt`, the sentence stating *"Downside is his version of Mips is old so you have to follow the older syntax"* fell exactly at the tail end of the document. 
 
-**What you would change to fix it:**
+Because the text chunk was cut off mechanically at 300 characters, the word "Mips" was split across a chunk boundary, and the surrounding text fragment fell below the `min_length=50` filter threshold in `ingest.py`. As a result, the embedding model (`all-MiniLM-L6-v2`) generated a vector that didn't have enough semantic overlap with the word "MIPS" or "Assembly Language," failing to pull that specific text segment into the top-k results. Because the generation step is strictly grounded, the LLM safely (but inaccurately) refused to answer.
+
+**What you would change to fix it:** 
+To fix this, I would implement **Recursive Character Chunking** (splitting by paragraphs or sentences first rather than a hard character boundary) or increase the sliding window overlap from 50 to 100 characters. This ensures that short sentences near the edges of text files aren't broken up or dropped by length filters.
 
 ---
 
 ## Spec Reflection
 
 **One way the spec helped you during implementation:**
+Writing out the `AI Tool Plan` in `planning.md` before coding forced me to think of the pipeline modularly. Instead of asking an AI to "build a RAG system," I programmatically isolated each step (Ingestion $\rightarrow$ Retrieval $\rightarrow$ Generation). This made debugging simple because when my generation failed, I already had a standalone `run_retrieval.py` script from Milestone 4 to verify that the database lookup was the real bottleneck.
 
 **One way your implementation diverged from the spec, and why:**
+The implementation diverged from the spec in the user interface phase. The initial plan in `planning.md` was to use a simple command-line terminal application loop. However, during development, it became clear that verifying grounding and tracking inline citations in a raw terminal wall of text was clumsy and difficult to see clearly. Upgrading to a web-based Gradio layout allowed the citations and original source filenames to be cleanly separated into independent visual components, matching production standards much better.
 
 ---
 
 ## AI Usage
 
 **Instance 1**
-
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+- *What I gave the AI:* The `Chunking Strategy` section of my `planning.md` and the template structure of `ingest.py`.
+- *What it produced:* A character-based sliding window function utilizing regex pattern adjustments to scrub out HTML data.
+- *What I changed or overrode:* The generated code dynamically split chunks strictly every 300 characters without testing if the resulting string was blank. I overrode this by adding a `len(chunk_text) >= min_length` filter to prevent empty whitespace blocks from cluttering the ChromaDB collection.
 
 **Instance 2**
-
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+- *What I gave the AI:* The pipeline diagram, the text contents of the retrieved vector dictionary, and a request for a Groq prompt template.
+- *What it produced:* A system prompt instructing the model to answer queries using the provided text contexts.
+- *What I changed or overrode:* The initial AI prompt used passive phrases like "Try to use the documents if possible." Knowing this would allow the model to hallucinate from its general weights, I changed the phrasing to absolute, binding rules ("Your sole task is to answer user queries using ONLY the provided context... If not present, respond EXACTLY with...") and reduced the API temperature parameters down to `0.0` for maximum deterministic grounding.
